@@ -27,7 +27,6 @@ DriveWise/
 │   └── pipeline.py           # end-to-end pipeline + JSONL logging
 ├── app/app.py                # Streamlit demo
 ├── evaluation/run_eval.py    # latency / success evaluation  (python -m evaluation.run_eval)
-├── notebooks/DriveWise.ipynb # original step-by-step development notebook
 ├── Data/Brochures/<BRAND>/<Model>.pdf
 ├── vectorstore/              # persisted FAISS index + chunk metadata
 ├── .env.example              # copy to .env and add GOOGLE_API_KEY
