@@ -1,0 +1,10 @@
+﻿streamlit
+pyyaml
+google-generativeai
+python-dotenv
+pandas
+numpy
+faiss-cpu
+PyMuPDF
+sentence-transformers
+pyarrow

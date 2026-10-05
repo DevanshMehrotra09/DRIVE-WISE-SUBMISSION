@@ -1,0 +1,39 @@
+# ============================================================
+# DriveWise configuration
+# Every tunable value lives here; nothing is hardcoded in src/.
+# ============================================================
+
+paths:
+  brochures: Data/Brochures          # Data/Brochures/<BRAND>/<Model>.pdf
+  vectorstore: vectorstore           # index.faiss + chunk_metadata.(parquet|csv)
+  logs: logs                         # query_log.jsonl
+  evaluation: evaluation             # eval_results.csv
+  prompts: prompts/prompts.yaml      # the prompt file
+
+models:
+  llm: gemini-3.1-flash-lite         # set to whichever Gemini model your API key can use
+  embedding: BAAI/bge-small-en-v1.5
+  reranker: cross-encoder/ms-marco-MiniLM-L-6-v2
+  bge_query_instruction: "Represent this sentence for searching relevant passages: "
+
+retrieval:
+  top_k: 10        # candidates kept after vector search
+  top_n: 4         # chunks sent to the LLM after re-ranking
+
+generation:
+  temperature: 0.2          # low = factual, consistent answers
+  max_output_tokens: 600
+  max_retries: 2            # retries on rate-limit (429) errors only
+  retry_delay_s: 5          # doubles after each retry
+
+# Keyword-frequency section classifier used at ingestion time
+section_keywords:
+  engine_performance: [engine, performance, power, torque, motor, acceleration]
+  mileage_efficiency: [mileage, range, km/charge, fuel efficiency, kmpl]
+  safety: [safety, airbag, abs, adas, collision, brake]
+  dimensions: [dimensions, wheelbase, ground clearance, length, width, height, boot space]
+  interior_comfort: [interior, comfort, seat, upholstery, ambient lighting]
+  exterior_styling: [exterior, styling, wheel, alloy, led, sunroof]
+  infotainment_connectivity: [infotainment, touchscreen, connect, app, bluetooth, speaker, charging]
+  features: [feature, variant, trim]
+  legal_disclaimer: ["terms & conditions", reserves the right, warranty, disclaims]
