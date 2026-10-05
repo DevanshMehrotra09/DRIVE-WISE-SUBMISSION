@@ -1,11 +1,12 @@
-"""Gemini API integration: prompt construction and generation with retry."""
+"""Gemini API integration (google-genai SDK): prompt construction and generation with retry."""
 
 import os
 import time
 
-import google.generativeai as genai
 import pandas as pd
 from dotenv import load_dotenv
+from google import genai
+from google.genai import errors, types
 
 
 def format_context(chunks: pd.DataFrame) -> str:
@@ -42,15 +43,13 @@ class Generator:
         gen_cfg = cfg["generation"]
         self.max_retries = gen_cfg["max_retries"]
         self.retry_delay = gen_cfg["retry_delay_s"]
+        self.model_name = cfg["models"]["llm"]
 
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel(
-            cfg["models"]["llm"],
+        self.client = genai.Client(api_key=api_key)
+        self.config = types.GenerateContentConfig(
             system_instruction=prompts["system"],
-            generation_config=genai.GenerationConfig(
-                temperature=gen_cfg["temperature"],
-                max_output_tokens=gen_cfg["max_output_tokens"],
-            ),
+            temperature=gen_cfg["temperature"],
+            max_output_tokens=gen_cfg["max_output_tokens"],
         )
 
     def generate(self, prompt: str) -> tuple[str, str]:
@@ -58,19 +57,25 @@ class Generator:
         delay = self.retry_delay
         for attempt in range(self.max_retries + 1):
             try:
-                response = self.model.generate_content(prompt)
-                return response.text.strip(), "success"
-            except ValueError:
-                # .text raises when the response is empty or blocked by safety filters
-                return "The model returned no answer for this question. Try rephrasing it.", "empty_response"
-            except Exception as exc:
-                message = str(exc)
-                rate_limited = "429" in message or "RESOURCE_EXHAUSTED" in message
+                response = self.client.models.generate_content(
+                    model=self.model_name,
+                    contents=prompt,
+                    config=self.config,
+                )
+                text = (response.text or "").strip()
+                if not text:
+                    # empty or blocked by safety filters
+                    return "The model returned no answer for this question. Try rephrasing it.", "empty_response"
+                return text, "success"
+            except errors.APIError as exc:
+                rate_limited = exc.code == 429
                 if rate_limited and attempt < self.max_retries:
                     time.sleep(delay)
                     delay *= 2
                     continue
                 if rate_limited:
                     return "Gemini API quota exceeded. Please wait a minute and try again.", "rate_limited"
-                return f"Generation failed: {message}", "error"
+                return f"Generation failed: {exc}", "error"
+            except Exception as exc:
+                return f"Generation failed: {exc}", "error"
         return "Generation failed.", "error"
